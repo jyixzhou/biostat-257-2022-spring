@@ -14726,17 +14726,19 @@ that will drive the objective $L^{(t)} = L(\mathbf{V}^{(t)}, \mathbf{W}^{(t)})$ 
     <span class="k">end</span>
 
     <span class="k">for</span> <span class="n">iter</span> <span class="k">in</span> <span class="mi">1</span><span class="o">:</span><span class="n">maxiter</span>
-
+        <span class="c"># V .= V .* (X * W&#39;) ./ (V * W * W&#39;)</span>
         <span class="n">mul!</span><span class="p">(</span><span class="n">storageR</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">transpose</span><span class="p">(</span><span class="n">W</span><span class="p">))</span> 
         <span class="n">mul!</span><span class="p">(</span><span class="n">storageV2</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">storageR</span><span class="p">)</span>
         <span class="n">mul!</span><span class="p">(</span><span class="n">storageV1</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">transpose</span><span class="p">(</span><span class="n">W</span><span class="p">))</span>
         <span class="n">V</span> <span class="o">.=</span> <span class="n">V</span> <span class="o">.*</span> <span class="n">storageV1</span> <span class="o">./</span> <span class="n">storageV2</span>
         
+        <span class="c"># W .= W .* (V&#39; * X) ./ (V&#39; * V * W)</span>
         <span class="n">mul!</span><span class="p">(</span><span class="n">storageR</span><span class="p">,</span> <span class="n">transpose</span><span class="p">(</span><span class="n">V</span><span class="p">),</span> <span class="n">V</span><span class="p">)</span>
         <span class="n">mul!</span><span class="p">(</span><span class="n">storageW2</span><span class="p">,</span> <span class="n">storageR</span><span class="p">,</span> <span class="n">W</span><span class="p">)</span>
         <span class="n">mul!</span><span class="p">(</span><span class="n">storageW1</span><span class="p">,</span> <span class="n">transpose</span><span class="p">(</span><span class="n">V</span><span class="p">),</span> <span class="n">X</span><span class="p">)</span>
         
         <span class="n">objold</span> <span class="o">=</span> <span class="n">obj</span>
+        <span class="c"># obj = norm(X - V * W)^2</span>
         <span class="n">obj</span> <span class="o">=</span> <span class="n">x2norm</span> 
         <span class="nd">@inbounds</span> <span class="k">for</span> <span class="n">idx</span> <span class="k">in</span> <span class="n">eachindex</span><span class="p">(</span><span class="n">W</span><span class="p">)</span>
             <span class="n">obj</span> <span class="o">=</span> <span class="n">obj</span> <span class="o">+</span> <span class="p">(</span><span class="n">storageW2</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="n">storageW1</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span> <span class="o">*</span> <span class="n">W</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
@@ -14753,8 +14755,7 @@ that will drive the objective $L^{(t)} = L(\mathbf{V}^{(t)}, \mathbf{W}^{(t)})$ 
     <span class="k">end</span>
     
     <span class="k">if</span> <span class="n">niter</span> <span class="o">==</span> <span class="n">maxiter</span>
-        <span class="c"># @warning &quot;maxiter reached without convergence&quot;</span>
-        <span class="nd">@warn</span> <span class="s">&quot;SCREAM!!!! maxiter reached without convergence&quot;</span>
+        <span class="nd">@warn</span> <span class="s">&quot;maxiter reached without convergence&quot;</span>
     <span class="k">end</span> 
 
     <span class="n">V</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">niter</span>
@@ -14932,6 +14933,23 @@ obj=5256.663870563529, niter=581
 r=50
   4.480342 seconds (23 allocations: 7.774 MiB)
 obj=4430.201581697291, niter=698</code></pre>
+<p>Updated output using new benchmarking specifications from April 28 is</p>
+
+<pre><code>r=10
+  355.995 ms (9 allocations: 437.19 KiB)
+obj=11730.866905750241, niter=239
+r=20
+  408.972 ms (9 allocations: 875.44 KiB)
+obj=8497.605595865549, niter=394
+r=30
+  572.517 ms (9 allocations: 1.28 MiB)
+obj=6621.945968477521, niter=482
+r=40
+  607.110 ms (9 allocations: 1.72 MiB)
+obj=5256.866299832109, niter=581
+r=50
+  1.187 s (10 allocations: 2.15 MiB)
+obj=4430.362097313249, niter=698</code></pre>
 <p>Since my laptop is about 6-7 years old, I expect to see your run time shorter than mine. Your memory allocation should be less or equal to mine.</p>
 
 </div>
@@ -14961,7 +14979,7 @@ obj=4430.201581697291, niter=698</code></pre>
 <span class="n">r</span> <span class="o">=</span> <span class="mi">10</span>
 <span class="n">V0</span> <span class="o">=</span> <span class="n">V0full</span><span class="p">[</span><span class="o">:</span><span class="p">,</span> <span class="mi">1</span><span class="o">:</span><span class="n">r</span><span class="p">]</span>
 <span class="n">W0</span> <span class="o">=</span> <span class="n">W0full</span><span class="p">[</span><span class="mi">1</span><span class="o">:</span><span class="n">r</span><span class="p">,</span> <span class="o">:</span><span class="p">]</span>
-<span class="n">nnmf</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">r</span><span class="p">;</span> <span class="n">V</span> <span class="o">=</span> <span class="n">V0</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">W0</span><span class="p">)</span>
+<span class="n">V1</span><span class="p">,</span> <span class="n">W1</span><span class="p">,</span> <span class="n">obj1</span><span class="p">,</span> <span class="n">niter1</span> <span class="o">=</span> <span class="n">nnmf</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">r</span><span class="p">;</span> <span class="n">V</span> <span class="o">=</span> <span class="n">V0</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">W0</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -15002,7 +15020,8 @@ obj=4430.201581697291, niter=698</code></pre>
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[7]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-julia"><pre><span></span><span class="k">for</span> <span class="n">r</span> <span class="k">in</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>
+<div class=" highlight hl-julia"><pre><span></span><span class="c"># old benchmarking code</span>
+<span class="k">for</span> <span class="n">r</span> <span class="k">in</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>
     <span class="n">println</span><span class="p">(</span><span class="s">&quot;r=</span><span class="si">$r</span><span class="s">&quot;</span><span class="p">)</span>
     <span class="n">V0</span> <span class="o">=</span> <span class="n">V0full</span><span class="p">[</span><span class="o">:</span><span class="p">,</span> <span class="mi">1</span><span class="o">:</span><span class="n">r</span><span class="p">]</span>
     <span class="n">W0</span> <span class="o">=</span> <span class="n">W0full</span><span class="p">[</span><span class="mi">1</span><span class="o">:</span><span class="n">r</span><span class="p">,</span> <span class="o">:</span><span class="p">]</span>
@@ -15031,19 +15050,83 @@ obj=4430.201581697291, niter=698</code></pre>
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
 <pre>r=10
-  0.420252 seconds (2.66 k allocations: 591.181 KiB, 2.92% compilation time)
+  0.358236 seconds (22 allocations: 437.641 KiB)
 obj=11730.86690575003, niter=239
 r=20
-  0.764594 seconds (22 allocations: 875.891 KiB)
+  0.747932 seconds (22 allocations: 875.891 KiB)
 obj=8497.605595865596, niter=394
 r=30
-  1.058854 seconds (22 allocations: 1.285 MiB)
+  1.016686 seconds (22 allocations: 1.285 MiB)
 obj=6621.945968477781, niter=482
 r=40
-  1.470157 seconds (24 allocations: 1.716 MiB)
+  1.522622 seconds (24 allocations: 1.716 MiB)
 obj=5256.866299832117, niter=581
 r=50
-  2.437973 seconds (25 allocations: 2.149 MiB)
+  2.289000 seconds (25 allocations: 2.149 MiB)
+obj=4430.362097313581, niter=698
+</pre>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-julia"><pre><span></span><span class="c"># new benchmarking code</span>
+<span class="k">for</span> <span class="n">r</span> <span class="k">in</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">50</span><span class="p">]</span>
+    <span class="n">println</span><span class="p">(</span><span class="s">&quot;r=</span><span class="si">$r</span><span class="s">&quot;</span><span class="p">)</span>
+    <span class="n">V0</span> <span class="o">=</span> <span class="n">V0full</span><span class="p">[</span><span class="o">:</span><span class="p">,</span> <span class="mi">1</span><span class="o">:</span><span class="n">r</span><span class="p">]</span>
+    <span class="n">W0</span> <span class="o">=</span> <span class="n">W0full</span><span class="p">[</span><span class="mi">1</span><span class="o">:</span><span class="n">r</span><span class="p">,</span> <span class="o">:</span><span class="p">]</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">niter</span> <span class="o">=</span> <span class="n">nnmf</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">V0</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">W0</span><span class="p">)</span>
+    <span class="nd">@btime</span> <span class="n">nnmf</span><span class="p">(</span><span class="o">$</span><span class="n">X</span><span class="p">,</span> <span class="o">$</span><span class="n">r</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="o">$</span><span class="n">V0</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="o">$</span><span class="n">W0</span><span class="p">)</span> <span class="n">setup</span><span class="o">=</span><span class="p">(</span>
+        <span class="n">copyto!</span><span class="p">(</span><span class="n">V0</span><span class="p">,</span> <span class="n">V0full</span><span class="p">[</span><span class="o">:</span><span class="p">,</span> <span class="mi">1</span><span class="o">:</span><span class="n">r</span><span class="p">]),</span> 
+        <span class="n">copyto!</span><span class="p">(</span><span class="n">W0</span><span class="p">,</span> <span class="n">W0full</span><span class="p">[</span><span class="mi">1</span><span class="o">:</span><span class="n">r</span><span class="p">,</span> <span class="o">:</span><span class="p">])</span>
+        <span class="p">)</span> <span class="n">evals</span><span class="o">=</span><span class="mi">1</span>
+    <span class="n">println</span><span class="p">(</span><span class="s">&quot;obj=</span><span class="si">$obj</span><span class="s">, niter=</span><span class="si">$niter</span><span class="s">&quot;</span><span class="p">)</span>
+<span class="k">end</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>r=10
+  322.019 ms (9 allocations: 437.19 KiB)
+obj=11730.86690575003, niter=239
+r=20
+  399.458 ms (9 allocations: 875.44 KiB)
+obj=8497.605595865596, niter=394
+r=30
+  418.812 ms (9 allocations: 1.28 MiB)
+obj=6621.945968477781, niter=482
+r=40
+  557.263 ms (9 allocations: 1.72 MiB)
+obj=5256.866299832117, niter=581
+r=50
+  720.197 ms (10 allocations: 2.15 MiB)
 obj=4430.362097313581, niter=698
 </pre>
 </div>
@@ -15083,13 +15166,13 @@ obj=4430.362097313581, niter=698
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="n">r</span> <span class="o">=</span> <span class="mi">10</span>
 <span class="n">V02</span> <span class="o">=</span> <span class="n">V0full</span><span class="p">[</span><span class="o">:</span><span class="p">,</span> <span class="mi">11</span><span class="o">:</span><span class="p">(</span><span class="mi">10</span><span class="o">+</span><span class="n">r</span><span class="p">)]</span>
 <span class="n">W02</span> <span class="o">=</span> <span class="n">W0full</span><span class="p">[</span><span class="mi">11</span><span class="o">:</span><span class="p">(</span><span class="mi">10</span><span class="o">+</span><span class="n">r</span><span class="p">),</span> <span class="o">:</span><span class="p">]</span>
-<span class="n">nnmf</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">V02</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">W02</span><span class="p">)</span>
+<span class="n">V2</span><span class="p">,</span> <span class="n">W2</span><span class="p">,</span> <span class="n">obj2</span><span class="p">,</span> <span class="n">niter2</span> <span class="o">=</span> <span class="n">nnmf</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">V02</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">W02</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -15107,13 +15190,136 @@ obj=4430.362097313581, niter=698
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[8]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
 
 
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
 <pre>([0.15639140668990062 0.0015110046893658383 … 0.017505157138830274 6.743421135235227e-7; 0.183437502753449 0.0037040562063363897 … 0.03490943487859234 2.1259645340095597e-7; … ; 0.0433991260771574 0.03806544167018934 … 0.06941835850668024 0.020544893336734323; 0.1319224118079186 1.4722228394706425e-30 … 0.007155803405155358 0.1131608643995278], [1.9486373647887635e-27 2.9049023385036153e-34 … 0.0029521015712268795 1.5754888954917352e-22; 0.5194953000146963 0.4305190756940345 … 1.4638347637819606 1.447771181275669; … ; 1.2028562561079277 1.6800376244622715 … 1.0694524520983362e-9 1.6219022752604946e-16; 4.515031596988584e-20 1.5741529561407076e-12 … 1.7708254500572091 1.4174803801837539], 11589.359173554183, 293)</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[10]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-julia"><pre><span></span><span class="n">V2</span> <span class="o">==</span> <span class="n">V1</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>false</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[11]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-julia"><pre><span></span><span class="n">W2</span> <span class="o">==</span> <span class="n">W1</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>false</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[12]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-julia"><pre><span></span><span class="n">obj1</span> <span class="o">==</span> <span class="n">obj2</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>false</pre>
 </div>
 
 </div>
@@ -15152,14 +15358,14 @@ obj=4430.362097313581, niter=698
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[9]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[13]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="n">r</span> <span class="o">=</span> <span class="mi">10</span>
 <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="o">=</span> <span class="n">size</span><span class="p">(</span><span class="n">X</span><span class="p">)</span> 
 <span class="n">V03</span> <span class="o">=</span> <span class="n">ones</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
 <span class="n">W03</span> <span class="o">=</span> <span class="n">ones</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
-<span class="n">nnmf</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">V03</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">W03</span><span class="p">)</span>
+<span class="n">V3</span><span class="p">,</span> <span class="n">W3</span><span class="p">,</span> <span class="n">obj3</span><span class="p">,</span> <span class="n">niter3</span> <span class="o">=</span> <span class="n">nnmf</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">V</span> <span class="o">=</span> <span class="n">V03</span><span class="p">,</span> <span class="n">W</span> <span class="o">=</span> <span class="n">W03</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -15177,13 +15383,136 @@ obj=4430.362097313581, niter=698
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
 
 
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
 <pre>([0.02737339344273953 0.02737339344273953 … 0.027373393442739525 0.027373393442739525; 0.027206938610572086 0.027206938610572086 … 0.027206938610572096 0.027206938610572096; … ; 0.028520195404725113 0.028520195404725113 … 0.028520195404725116 0.028520195404725116; 0.02803092551508475 0.02803092551508475 … 0.028030925515084758 0.028030925515084758], [0.36995177994768597 0.46065860110694035 … 0.5580793952009436 0.4255210382434648; 0.36995177994768597 0.46065860110694035 … 0.5580793952009436 0.4255210382434648; … ; 0.36995177994768613 0.46065860110694046 … 0.5580793952009441 0.42552103824346466; 0.36995177994768613 0.46065860110694046 … 0.5580793952009441 0.42552103824346466], 25297.015778490062, 4)</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[14]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-julia"><pre><span></span><span class="n">V3</span> <span class="o">==</span> <span class="n">V1</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[14]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>false</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[15]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-julia"><pre><span></span><span class="n">W3</span> <span class="o">==</span> <span class="n">W1</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[15]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>false</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[16]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-julia"><pre><span></span><span class="n">obj3</span> <span class="o">==</span> <span class="n">obj1</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
+</div>
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[16]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>false</pre>
 </div>
 
 </div>
@@ -15222,7 +15551,7 @@ obj=4430.362097313581, niter=698
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[10]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[17]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="n">r</span> <span class="o">=</span> <span class="mi">50</span>
@@ -15247,7 +15576,7 @@ obj=4430.362097313581, niter=698
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[17]:</div>
 
 
 
@@ -15270,7 +15599,7 @@ class="
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[11]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[18]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="n">colorview</span><span class="p">(</span><span class="n">Gray</span><span class="p">,</span> <span class="n">reshape</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">5</span><span class="p">,</span> <span class="o">:</span><span class="p">],</span> <span class="mi">19</span><span class="p">,</span> <span class="mi">19</span><span class="p">))</span>
@@ -15291,7 +15620,7 @@ class="
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[11]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[18]:</div>
 
 
 
@@ -15368,12 +15697,40 @@ Make your function as efficient (both speed and memory) as possible.</p>
 </div>
 </div>
 </div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p><code>Φ</code> is re-expressed as follows,</p>
+
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+$$
+\widehat \Phi_{ij} = 
+\frac{(G * G')_{ij} - (e_i + e_j)' S}
+{\frac{2}{n} sum(S) - \frac{1}{n^2} sum (G * G')} + 1
+$$<p>where $S$ is a $nx1$ vector containing the row sums of $G$, and $(e_i + e_j)' S$ calculates the sum of the $i^{th}$ and $j^{th}$ elements of S, i.e. the sum of the $i^{th}$ and $j^{th}$ rows of G.</p>
+
+</div>
+</div>
+</div>
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[12]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[19]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="k">function</span> <span class="n">kinship</span><span class="p">(</span><span class="n">G</span><span class="o">::</span><span class="kt">Matrix</span><span class="p">{</span><span class="kt">T</span><span class="p">})</span> <span class="k">where</span> <span class="kt">T</span> <span class="o">&lt;:</span> <span class="kt">AbstractFloat</span>
@@ -15382,14 +15739,18 @@ Make your function as efficient (both speed and memory) as possible.</p>
     <span class="n">Φ</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
     <span class="n">S</span> <span class="o">=</span> <span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
     
-    <span class="n">sum!</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span>
-    <span class="n">mul!</span><span class="p">(</span><span class="n">Φ</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">G</span><span class="o">&#39;</span><span class="p">)</span>
-    <span class="n">denom</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">n</span> <span class="o">*</span> <span class="n">sum</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="o">^</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sum</span><span class="p">(</span><span class="n">Φ</span><span class="p">)</span>
+    <span class="c"># calculate row sums and store in S</span>
+    <span class="n">sum!</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">G</span><span class="p">)</span> 
+    <span class="c"># calculate G * G&#39; and store in Φ since they have the same dimension</span>
+    <span class="n">mul!</span><span class="p">(</span><span class="n">Φ</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">G</span><span class="o">&#39;</span><span class="p">)</span> 
+    <span class="c"># calculate the denominator</span>
+    <span class="n">denom</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">n</span> <span class="o">*</span> <span class="n">sum</span><span class="p">(</span><span class="n">S</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">n</span><span class="o">^</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sum</span><span class="p">(</span><span class="n">Φ</span><span class="p">)</span> 
     
-    <span class="n">Φ</span> <span class="o">.=</span> <span class="n">Φ</span> <span class="o">./</span> <span class="n">denom</span> <span class="o">.+</span> <span class="mi">1</span>
+    <span class="c"># update Φ before subtracting (e_i + e_j)&#39;S</span>
+    <span class="n">Φ</span> <span class="o">.=</span> <span class="n">Φ</span> <span class="o">./</span> <span class="n">denom</span> <span class="o">.+</span> <span class="mi">1</span> 
     
     <span class="k">for</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="o">:</span><span class="n">n</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">1</span><span class="o">:</span><span class="n">n</span>
-        <span class="n">Φ</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span>  <span class="n">Φ</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">S</span><span class="p">[</span><span class="n">j</span><span class="p">])</span><span class="o">/</span> <span class="n">denom</span>
+        <span class="n">Φ</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span>  <span class="n">Φ</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="p">(</span><span class="n">S</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">S</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">/</span> <span class="n">denom</span> <span class="c"># subtract (e_i + e_j)&#39;S</span>
     <span class="k">end</span>
     <span class="c"># output</span>
     <span class="n">Φ</span>
@@ -15411,7 +15772,7 @@ Make your function as efficient (both speed and memory) as possible.</p>
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[19]:</div>
 
 
 
@@ -15477,7 +15838,7 @@ Make your function as efficient (both speed and memory) as possible.</p>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[13]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[20]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="c"># generate a fake genotype matrix with entries {0, 1, 2}</span>
@@ -15502,7 +15863,7 @@ Make your function as efficient (both speed and memory) as possible.</p>
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[13]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[20]:</div>
 
 
 
@@ -15566,7 +15927,7 @@ Make your function as efficient (both speed and memory) as possible.</p>
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[14]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[21]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-julia"><pre><span></span><span class="c"># benchmark</span>
@@ -15592,7 +15953,7 @@ Make your function as efficient (both speed and memory) as possible.</p>
 
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>  83.541 ms (3 allocations: 7.64 MiB)
+<pre>  76.011 ms (3 allocations: 7.64 MiB)
 </pre>
 </div>
 </div>
@@ -15600,7 +15961,7 @@ Make your function as efficient (both speed and memory) as possible.</p>
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[14]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[21]:</div>
 
 
 
