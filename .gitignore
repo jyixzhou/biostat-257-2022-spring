@@ -29,3 +29,4 @@ Manifest.toml
 .DS_Store
 notes/
 hw4/pgrksol.csv.gz
+hw5/lmm_data.csv
