@@ -28,4 +28,9 @@ Manifest.toml
 */.ipynb_checkpoints/*
 .DS_Store
 notes/
+<<<<<<< HEAD
 .Rproj.user
+=======
+hw4/pgrksol.csv.gz
+hw5/lmm_data.csv
+>>>>>>> main
