@@ -1,6 +1,6 @@
 *Juliet Yixuan Zhou*
 
-### Overall Grade: 155/160
+### Overall Grade: 160/160
 
 ### Quality of report: 10/10
 
@@ -20,7 +20,7 @@
 
     Yes
   
-### Completeness, correctness and efficiency of solution: 135/140
+### Completeness, correctness and efficiency of solution: 110/110
 
 - Q1 (Optional, 30 bonus pts). 
 
@@ -36,7 +36,7 @@
 
 - Q7 (20 pts). 
 
-- Q8 (5/10 pts). You did not write a summary `-5`.
+- Q8 (10 pts). 
 
 - Q9 (10 pts). 
 
