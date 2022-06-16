@@ -29,7 +29,12 @@ Manifest.toml
 .DS_Store
 notes/
 <<<<<<< HEAD
+<<<<<<< HEAD
 .Rproj.user
+=======
+hw4/pgrksol.csv.gz
+hw5/lmm_data.csv
+>>>>>>> main
 =======
 hw4/pgrksol.csv.gz
 hw5/lmm_data.csv
